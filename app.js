@@ -5,19 +5,15 @@ const inquirer = require("inquirer");
 const path = require("path");
 const fs = require("fs");
 
+
 const OUTPUT_DIR = path.resolve(__dirname, "output");
 const outputPath = path.join(OUTPUT_DIR, "team.html");
 
 const render = require("./lib/htmlRenderer");
+const teamMembers = [];
 
-
-
-// Write code to use inquirer to gather information about the development team members,
-// and to create objects for each team member (using the correct classes as blueprints!)
-
-function promptUser() {
-    console.log("Please build your team.")
-    return inquirer.prompt([
+function createManager () {
+    inquirer.prompt([
         {
             type: "input",
             name: "name",
@@ -26,72 +22,87 @@ function promptUser() {
         {
             type: "input",
             name: "id",
-            message: "What is your manager's ID number?"
+            message: "What is your manager's id?"
         },
         {
             type: "input",
             name: "email",
-            message: "What is your manager's email address?"
+            message: "What is your manager's email?"
         },
         {
             type: "input",
-            name: "officeNumber",
+            name: "office",
             message: "What is your manager's office number?"
         }
-    ]);
+
+    ]).then(function (answers) {
+        const manager = new Manager(answers.name, parseInt(answers.id), answers.email, parseInt(answers.office));
+        teamMembers.push(manager);
+        addMember();
+    });
 }
-function buildTeam() {
-    return inquirer.prompt([
+
+function addMember() {
+    inquirer.prompt([
         {
             type: "list",
-            name: "employeeType",
+            name: "type",
             message: "Which type of team member would you like to add?",
-            choices: ["Engineer", "Intern", "I don't want to add any more team members."]
+            choices: [
+                "Engineer",
+                "Intern",
+                "I don't want to add any more team members"
+            ]
+
+        }
+    ]).then(function(answer) {
+        if(answer.type === "Engineer") {
+            createEngineer();
+        }
+        else if (answer.type === "Intern") {
+            createIntern();
+        }
+        else {
+            render(teamMembers);
+            noMoreMembers();
         }
 
-    ])
-        .then(function (answers) {
-            if (answers.employeeType == "Engineer") {
-                addEngineer()
-                if (answers.employeeType == "Intern") {
-                    addIntern()
-                    if (answers.employeeType == "I don't want to add any more team members.") {
-                        noMoreMembers()
-                    }
-                    buildTeam()
-                }
-            }
-        })
+    })
 }
-function addEngineer() {
-    return inquirer.prompt([
+
+function createEngineer () {
+    inquirer.prompt([
         {
             type: "input",
             name: "name",
-            message: "What is your engineers's name?"
+            message: "What is your engineer's name?"
         },
         {
             type: "input",
             name: "id",
-            message: "What is your engineer's ID number?"
+            message: "What is your engineer's id?"
         },
         {
             type: "input",
             name: "email",
-            message: "What is your engineer's email address?"
+            message: "What is your engineer's email?"
         },
         {
             type: "input",
             name: "github",
-            message: "What is your engineer's GitHub name?"
+            message: "What is your engineer's github?"
         }
-    ]
-    );
+
+    ]).then(function (answers) {
+        const engineer = new Engineer(answers.name, parseInt(answers.id), answers.email, answers.github);
+        teamMembers.push(engineer);
+        addMember();
+    });
+
 }
 
-
-function addIntern() {
-    return inquirer.prompt([
+function createIntern () {
+    inquirer.prompt([
         {
             type: "input",
             name: "name",
@@ -100,46 +111,33 @@ function addIntern() {
         {
             type: "input",
             name: "id",
-            message: "What is your intern's ID number?"
+            message: "What is your intern's id?"
         },
         {
             type: "input",
             name: "email",
-            message: "What is your intern's email address?"
+            message: "What is your intern's email?"
         },
         {
             type: "input",
-            name: "github",
-            message: "What school did your intern attend?"
+            name: "school",
+            message: "What is your intern's school?"
         }
-    ]);
+
+    ]).then(function (answers) {
+        const intern = new Intern(answers.name, parseInt(answers.id), answers.email, answers.school);
+        teamMembers.push(intern);
+        addMember();
+    });
+
 }
-
-
+createManager();
 function noMoreMembers() {
-    //pass employee array to render function
-    //render function will return html as string
-    //write string to actual html file
-}
-
-
-var employees = []
-promptUser()
-    .then(function (answers) {
-        var manager = new Manager(answers.name, answers.id, answers.email, answers.officeNumber)
-        employees.push(manager)
-        var engineer = new Engineer(answers.name, answers.id, answers.email, answers.github)
-        employees.push(engineer)
-        var intern = new Intern(answers.name, answers.id, answers.email, answers.school)
-        employees.push(intern)
-        buildTeam()
-    })
-    .then(function () {
-        console.log("Successfully wrote to team.html");
-    })
-    .catch(function (err) {
-        console.log(err);
-    })
-
-
-
+    fs.writeFile(outputPath, render(teamMembers), function (err) {
+        if (err) {
+          throw err;
+        }
+      });
+      console.log("Successfully wrote to team.html");
+      break;
+    }
